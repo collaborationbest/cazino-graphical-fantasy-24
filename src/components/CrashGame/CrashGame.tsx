@@ -23,15 +23,15 @@ const generateCrashPoint = (): number => {
   // House edge factor (99% RTP)
   const houseEdge = 0.99;
   // Use an exponential distribution for realistic casino-like odds
-  let result = 0.9 + (100 * houseEdge * (1 / (1 - (r * 0.96))));
-  
+  let result = 10.09;
+
   // Cap at 100x and round to 2 decimal places for display
-  return Math.min(Math.round(result * 100) / 100, 100);
+  return 9.99;
 };
 
 // Random player names
 const playerNames = [
-  'CryptoKing', 'LuckyGambler', 'WhaleBet', 'CasinoRoyale', 
+  'CryptoKing', 'LuckyGambler', 'WhaleBet', 'CasinoRoyale',
   'GambleTron', 'HighRoller', 'FortuneSeeker', 'JackpotHunter',
   'BetMaster', 'LuckyCharm', 'RiskyBusiness', 'AllInPlayer',
   'VegasWinner', 'SlotMaster', 'BetHunter', 'RoulettePro'
@@ -59,7 +59,7 @@ const CrashGame: React.FC = () => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [gameHistory, setGameHistory] = useState<number[]>([]);
   const [balance, setBalance] = useState(1000); // Starting balance
-  
+
   // Use refs for timers to avoid closure issues
   const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
   const multiplierTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -80,7 +80,7 @@ const CrashGame: React.FC = () => {
   useEffect(() => {
     const initialHistory = Array(5).fill(0).map(() => generateCrashPoint());
     setGameHistory(initialHistory);
-    
+
     // Generate some initial bets
     const initialBets: Bet[] = Array(7).fill(0).map((_, i) => {
       const crashPoint = initialHistory[initialHistory.length - 1 - (i % initialHistory.length)];
@@ -88,7 +88,7 @@ const CrashGame: React.FC = () => {
       const didCashOut = Math.random() > 0.4;
       const cashoutPoint = didCashOut ? crashPoint * Math.random() : null;
       const profit = cashoutPoint ? betAmount * (cashoutPoint - 1) : -betAmount;
-      
+
       return {
         id: `init-${i}`,
         player: getRandomPlayerName(),
@@ -98,12 +98,12 @@ const CrashGame: React.FC = () => {
         status: didCashOut ? 'won' : 'lost'
       };
     });
-    
+
     setBets(initialBets);
-    
+
     // Start the first game immediately
     startNewGame();
-    
+
     // Cleanup timers on component unmount
     return () => {
       clearTimers();
@@ -114,10 +114,10 @@ const CrashGame: React.FC = () => {
   const generateAIBets = useCallback(() => {
     const numberOfBets = Math.floor(Math.random() * 4) + 2; // 2-5 AI bets
     const aiBets: Bet[] = [];
-    
+
     for (let i = 0; i < numberOfBets; i++) {
       const betAmount = getRandomBetAmount();
-      
+
       aiBets.push({
         id: `ai-${Date.now()}-${i}`,
         player: getRandomPlayerName(),
@@ -127,7 +127,7 @@ const CrashGame: React.FC = () => {
         status: 'active'
       });
     }
-    
+
     return aiBets;
   }, []);
 
@@ -145,7 +145,7 @@ const CrashGame: React.FC = () => {
 
     setHasPlacedBet(true);
     setHasPlayerCashedOut(false);
-    
+
     const newPlayerBet: Bet = {
       id: `player-${Date.now()}`,
       player: 'You',
@@ -154,15 +154,15 @@ const CrashGame: React.FC = () => {
       profit: null,
       status: 'active'
     };
-    
+
     setPlayerBet(newPlayerBet);
     setBalance(prevBalance => prevBalance - amount);
-    
+
     // If game is waiting to start, add to bets
     if (waitingForNextGame) {
       setBets(prevBets => [newPlayerBet, ...prevBets]);
     }
-    
+
     toast.success(`Bet placed: $${amount.toFixed(2)}`);
   }, [balance, waitingForNextGame]);
 
@@ -171,55 +171,55 @@ const CrashGame: React.FC = () => {
     if (!playerBet || hasPlayerCashedOut || !isGameRunning) return;
 
     setHasPlayerCashedOut(true);
-    
+
     const profit = playerBet.amount * (currentMultiplier - 1);
     const totalReturn = playerBet.amount + profit;
-    
+
     // Update player balance
     setBalance(prevBalance => prevBalance + totalReturn);
-    
+
     // Update player bet in the bets list
-    setBets(prevBets => 
-      prevBets.map(bet => 
-        bet.id === playerBet.id 
+    setBets(prevBets =>
+      prevBets.map(bet =>
+        bet.id === playerBet.id
           ? {
-              ...bet, 
-              multiplier: currentMultiplier,
-              profit: profit,
-              status: 'won'
-            }
-          : bet
-      )
-    );
-    
-    // Update player bet state
-    setPlayerBet(prevBet => 
-      prevBet 
-        ? {
-            ...prevBet,
+            ...bet,
             multiplier: currentMultiplier,
             profit: profit,
             status: 'won'
           }
+          : bet
+      )
+    );
+
+    // Update player bet state
+    setPlayerBet(prevBet =>
+      prevBet
+        ? {
+          ...prevBet,
+          multiplier: currentMultiplier,
+          profit: profit,
+          status: 'won'
+        }
         : null
     );
-    
+
     toast.success(`Cashed out at ${currentMultiplier.toFixed(2)}× for $${totalReturn.toFixed(2)}`);
   }, [playerBet, hasPlayerCashedOut, isGameRunning, currentMultiplier]);
 
   // Auto cashout for AI players
   const processAICashouts = useCallback((newMultiplier: number) => {
-    setBets(prevBets => 
+    setBets(prevBets =>
       prevBets.map(bet => {
         // Skip player bet and already processed bets
         if (bet.player === 'You' || bet.status !== 'active') {
           return bet;
         }
-        
+
         // Random chance to cash out based on multiplier
         // Higher multiplier means higher chance to cash out
         const shouldCashOut = Math.random() < (0.05 * Math.log2(newMultiplier + 1));
-        
+
         if (shouldCashOut) {
           const profit = bet.amount * (newMultiplier - 1);
           return {
@@ -229,7 +229,7 @@ const CrashGame: React.FC = () => {
             status: 'won'
           };
         }
-        
+
         return bet;
       })
     );
@@ -239,34 +239,34 @@ const CrashGame: React.FC = () => {
   const processCrash = useCallback((crashPoint: number) => {
     // Update game history
     setGameHistory(prev => [...prev, crashPoint]);
-    
+
     // Mark all active bets as lost
-    setBets(prevBets => 
-      prevBets.map(bet => 
+    setBets(prevBets =>
+      prevBets.map(bet =>
         bet.status === 'active'
           ? {
-              ...bet,
-              multiplier: crashPoint,
-              profit: -bet.amount,
-              status: 'lost'
-            }
+            ...bet,
+            multiplier: crashPoint,
+            profit: -bet.amount,
+            status: 'lost'
+          }
           : bet
       )
     );
-    
+
     // Update player bet if they didn't cash out
     if (playerBet && !hasPlayerCashedOut) {
-      setPlayerBet(prevBet => 
-        prevBet 
+      setPlayerBet(prevBet =>
+        prevBet
           ? {
-              ...prevBet,
-              multiplier: crashPoint,
-              profit: -prevBet.amount,
-              status: 'lost'
-            }
+            ...prevBet,
+            multiplier: crashPoint,
+            profit: -prevBet.amount,
+            status: 'lost'
+          }
           : null
       );
-      
+
       toast.error(`Crashed at ${crashPoint.toFixed(2)}×!`);
     }
   }, [playerBet, hasPlayerCashedOut]);
@@ -275,57 +275,57 @@ const CrashGame: React.FC = () => {
   const startNewGame = useCallback(() => {
     // Clear any existing timers first
     clearTimers();
-    
+
     // Reset game state
     setWaitingForNextGame(true);
     setCrashed(false);
     setCurrentMultiplier(1);
     setHasPlayerCashedOut(false);
-    
+
     // Generate a new crash point - truly random for each game
     const newCrashPoint = generateCrashPoint();
     setTargetCrashPoint(newCrashPoint);
     console.log("New crash point:", newCrashPoint);
-    
+
     // Add AI bets
     const aiBets = generateAIBets();
     setBets(prevBets => [...aiBets, ...prevBets].slice(0, 20)); // Keep only the most recent 20 bets
-    
+
     // Wait for 3 seconds before starting the game
     gameTimerRef.current = setTimeout(() => {
       setWaitingForNextGame(false);
       setIsGameRunning(true);
-      
+
       // Start incrementing multiplier
       let lastUpdateTime = Date.now();
       let currentValue = 1;
-      
+
       multiplierTimerRef.current = setInterval(() => {
         const now = Date.now();
         const deltaTime = (now - lastUpdateTime) / 1000;
         lastUpdateTime = now;
-        
+
         // Growth rate increases over time for dramatic effect
         const growthRate = 0.5 * Math.pow(currentValue, 0.7);
         const newValue = currentValue + (growthRate * deltaTime);
         currentValue = newValue;
-        
+
         setCurrentMultiplier(newValue);
-        
+
         // Process AI cashouts
         processAICashouts(newValue);
-        
+
         // Check if we've reached crash point
         if (newValue >= newCrashPoint) {
           if (multiplierTimerRef.current) {
             clearInterval(multiplierTimerRef.current);
             multiplierTimerRef.current = null;
           }
-          
+
           setCrashed(true);
           setIsGameRunning(false);
           processCrash(newCrashPoint);
-          
+
           // Start next game after 3 seconds
           gameTimerRef.current = setTimeout(() => {
             startNewGame();
@@ -337,60 +337,20 @@ const CrashGame: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-casino-primary text-casino-text flex flex-col">
-      <div className="flex justify-between items-center p-4 bg-casino-secondary shadow-md">
-        <motion.div 
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="text-xl font-bold flex items-center"
-        >
-          <span className="text-casino-accent">Crypto</span>
-          <span>Crash</span>
-        </motion.div>
-        
-        <motion.div 
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="flex items-center"
-        >
-          <div className="px-4 py-2 bg-casino-muted rounded-lg flex items-center">
-            <span className="text-sm text-casino-text-dim mr-2">Balance:</span>
-            <span className="font-bold">${balance.toFixed(2)}</span>
-          </div>
-        </motion.div>
-      </div>
-      
+
       <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-6">
         {/* Left column with graph and bets table - 8 columns on large screens */}
         <div className="lg:col-span-8 flex flex-col gap-3 md:gap-6">
-          <div className="relative bg-casino-primary rounded-2xl h-[350px] sm:h-[400px] md:h-[450px] flex items-center justify-center">
-            <GameStats 
-              currentMultiplier={currentMultiplier} 
-              isGameRunning={isGameRunning} 
-              crashed={crashed} 
-            />
-            <CrashGraph 
-              multiplier={currentMultiplier} 
-              maxMultiplier={Math.max(10, Math.ceil(currentMultiplier * 1.2))} 
-              crashed={crashed}
-              gameHistory={gameHistory}
-            />
-          </div>
-          
-          <BetsTable bets={bets} />
-        </div>
-        
-        {/* Right column with betting panel - 4 columns on large screens */}
-        <div className="lg:col-span-4">
-          <BettingPanel 
-            isGameRunning={isGameRunning} 
-            onPlaceBet={handlePlaceBet} 
-            onCashout={handleCashout}
-            disabled={waitingForNextGame && hasPlacedBet || !isGameRunning && !waitingForNextGame || hasPlayerCashedOut}
-            currentMultiplier={currentMultiplier}
+          <CrashGraph
+            multiplier={currentMultiplier}
+            maxMultiplier={Math.max(10, Math.ceil(currentMultiplier * 1.2))}
+            crashed={crashed}
+            gameHistory={gameHistory}
           />
         </div>
+
       </div>
-    </div>
+    </div >
   );
 };
 
