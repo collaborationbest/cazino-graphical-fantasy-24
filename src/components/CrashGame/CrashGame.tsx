@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import CrashGraph from './CrashGraph';
 import BettingPanel from './BettingPanel';
 import GameStats from './GameStats';
 import BetsTable from './BetsTable';
-import { toast } from '@/components/ui/sonner';
+import { toast } from '@/lib/toast';
 
 interface Bet {
   id: string;
