@@ -48,8 +48,8 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       // Clear canvas
       ctx.clearRect(0, 0, width, height);
       
-      // Graph settings
-      const padding = { left: 50, right: 50, top: 50, bottom: 50 };
+      // Graph settings - adjust padding to give more space for graph
+      const padding = { left: 60, right: 40, top: 40, bottom: 60 };
       const graphWidth = width - padding.left - padding.right;
       const graphHeight = height - padding.top - padding.bottom;
       
@@ -67,7 +67,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
                         displayMax <= 20 ? 2 : 
                         displayMax <= 50 ? 5 : 10;
       
-      // Vertical grid lines
+      // Vertical grid lines - start from 0
       for (let i = 0; i <= displayMax; i += gridStep) {
         const x = padding.left + i * xScale;
         ctx.beginPath();
@@ -82,7 +82,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
         ctx.fillText(i.toString() + 'x', x, height - padding.bottom + 20);
       }
       
-      // Horizontal grid lines
+      // Horizontal grid lines - start from 0
       for (let i = 0; i <= displayMax; i += gridStep) {
         const y = height - padding.bottom - i * yScale;
         ctx.beginPath();
@@ -101,13 +101,13 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 2;
       
-      // X-axis
+      // X-axis - at y=0
       ctx.beginPath();
       ctx.moveTo(padding.left, height - padding.bottom);
       ctx.lineTo(width - padding.right, height - padding.bottom);
       ctx.stroke();
       
-      // Y-axis
+      // Y-axis - at x=0
       ctx.beginPath();
       ctx.moveTo(padding.left, height - padding.bottom);
       ctx.lineTo(padding.left, padding.top);
@@ -133,11 +133,12 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       // Draw the curve
       const points = calculatePoints(multiplier);
       
-      // Draw curve - starting from origin (0,0)
+      // Draw curve - starting exactly from origin (0,0)
       ctx.beginPath();
       ctx.moveTo(padding.left, height - padding.bottom); // Starting at origin (0,0) in graph coordinates
       
-      points.forEach(point => {
+      points.forEach((point, index) => {
+        // Ensure the curve actually reaches all the way to current multiplier
         const x = padding.left + point.x * xScale;
         const y = height - padding.bottom - point.y * yScale;
         ctx.lineTo(x, y);
@@ -190,14 +191,19 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.fill();
       ctx.shadowBlur = 0;
       
-      // Draw multiplier text
+      // Draw multiplier text - make sure it's visible even at high values
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#FFFFFF';
+      const textX = lastX + 15;
+      const textY = lastY - 10;
+      
+      // Make sure text stays within canvas
+      const textOffset = width - textX < 80 ? -80 : 15;
       ctx.fillText(
         multiplier.toFixed(2) + 'x', 
-        lastX + 15, 
-        lastY - 10
+        lastX + textOffset, 
+        textY
       );
       
       // Draw previous game results as small markers

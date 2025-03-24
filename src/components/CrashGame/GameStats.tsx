@@ -29,7 +29,7 @@ const GameStats: React.FC<GameStatsProps> = ({
   }
   
   return (
-    <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-10 w-full text-center">
+    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-full text-center pointer-events-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={crashed ? 'crashed' : isGameRunning ? 'running' : 'waiting'}
@@ -44,7 +44,7 @@ const GameStats: React.FC<GameStatsProps> = ({
             stiffness: crashed ? 300 : 260, 
             damping: crashed ? 10 : 20 
           }}
-          className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold ${colorClass} flex items-center justify-center`}
+          className={`text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold ${colorClass} flex items-center justify-center`}
         >
           {display}
           {!crashed && isGameRunning && (
@@ -58,7 +58,7 @@ const GameStats: React.FC<GameStatsProps> = ({
                 repeat: Infinity,
                 repeatType: "reverse"
               }}
-              className="ml-2 text-2xl sm:text-3xl md:text-4xl"
+              className="ml-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
             >
               🚀
             </motion.div>
@@ -68,7 +68,7 @@ const GameStats: React.FC<GameStatsProps> = ({
               initial={{ rotate: 0 }}
               animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
               transition={{ duration: 0.5 }}
-              className="ml-2 text-2xl sm:text-3xl md:text-4xl"
+              className="ml-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
             >
               💥
             </motion.div>
