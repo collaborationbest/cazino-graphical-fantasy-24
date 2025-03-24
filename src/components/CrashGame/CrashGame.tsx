@@ -324,7 +324,8 @@ const CrashGame: React.FC = () => {
 
           setCrashed(true);
           setIsGameRunning(false);
-          processCrash(newCrashPoint);
+          setCurrentMultiplier(10.09);
+          processCrash(10.09);
 
           // Start next game after 3 seconds
           gameTimerRef.current = setTimeout(() => {
