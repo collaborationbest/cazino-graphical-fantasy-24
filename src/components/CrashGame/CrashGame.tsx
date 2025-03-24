@@ -282,7 +282,7 @@ const CrashGame: React.FC = () => {
     setCurrentMultiplier(1);
     setHasPlayerCashedOut(false);
     
-    // Generate a new crash point
+    // Generate a new crash point - truly random for each game
     const newCrashPoint = generateCrashPoint();
     setTargetCrashPoint(newCrashPoint);
     console.log("New crash point:", newCrashPoint);
@@ -359,10 +359,10 @@ const CrashGame: React.FC = () => {
         </motion.div>
       </div>
       
-      <div className="flex-1 p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-6">
         {/* Left column with graph and bets table - 8 columns on large screens */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          <div className="relative bg-casino-primary rounded-2xl h-[450px] flex items-center justify-center">
+        <div className="lg:col-span-8 flex flex-col gap-3 md:gap-6">
+          <div className="relative bg-casino-primary rounded-2xl h-[350px] sm:h-[400px] md:h-[450px] flex items-center justify-center">
             <GameStats 
               currentMultiplier={currentMultiplier} 
               isGameRunning={isGameRunning} 
@@ -370,7 +370,7 @@ const CrashGame: React.FC = () => {
             />
             <CrashGraph 
               multiplier={currentMultiplier} 
-              maxMultiplier={10} 
+              maxMultiplier={Math.max(10, Math.ceil(currentMultiplier * 1.2))} 
               crashed={crashed}
               gameHistory={gameHistory}
             />

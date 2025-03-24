@@ -113,7 +113,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.lineTo(padding.left, padding.top);
       ctx.stroke();
       
-      // Function to calculate curve points
+      // Function to calculate curve points - starting from 0,0
       const calculatePoints = (currentMultiplier: number) => {
         const points = [];
         const steps = 100;
@@ -133,9 +133,9 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       // Draw the curve
       const points = calculatePoints(multiplier);
       
-      // Draw curve
+      // Draw curve - starting from origin (0,0)
       ctx.beginPath();
-      ctx.moveTo(padding.left, height - padding.bottom);
+      ctx.moveTo(padding.left, height - padding.bottom); // Starting at origin (0,0) in graph coordinates
       
       points.forEach(point => {
         const x = padding.left + point.x * xScale;
