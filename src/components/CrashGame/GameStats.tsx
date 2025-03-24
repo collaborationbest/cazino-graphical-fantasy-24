@@ -34,7 +34,7 @@ const GameStats: React.FC<GameStatsProps> = ({
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className={`text-5xl font-bold ${colorClass}`}
+        className={`text-6xl font-bold ${colorClass}`}
       >
         {display}
       </motion.div>

@@ -4,7 +4,7 @@ import CrashGame from '@/components/CrashGame/CrashGame';
 
 const Index = () => {
   return (
-    <div className="overflow-hidden">
+    <div className="min-h-screen overflow-hidden bg-casino-primary">
       <CrashGame />
     </div>
   );

@@ -36,9 +36,10 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
   };
 
   return (
-    <div className="glass-panel p-6 w-full max-w-md animate-scale-in">
-      <div className="space-y-6">
-        <div className="space-y-3">
+    <div className="glass-panel p-6 w-full h-full animate-scale-in">
+      <h2 className="text-2xl font-bold text-casino-accent mb-6">Place Your Bet</h2>
+      <div className="space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-between">
             <span className="text-sm text-casino-text-dim">BET AMOUNT</span>
             <span className="text-sm font-medium">${betAmount.toFixed(2)}</span>
@@ -49,14 +50,14 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
             max="1000"
             value={betAmount}
             onChange={(e) => setBetAmount(Number(e.target.value))}
-            className="betting-input"
+            className="betting-input text-lg py-6"
             disabled={isGameRunning}
           />
-          <div className="flex justify-between gap-2">
+          <div className="grid grid-cols-4 gap-2 mt-2">
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
+              className="bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
               onClick={() => setBetAmount(Math.max(1, betAmount / 2))}
               disabled={isGameRunning}
             >
@@ -65,7 +66,7 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
+              className="bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
               onClick={() => setBetAmount(betAmount * 2)}
               disabled={isGameRunning}
             >
@@ -74,7 +75,7 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
+              className="bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
               onClick={() => setBetAmount(10)}
               disabled={isGameRunning}
             >
@@ -83,7 +84,7 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
+              className="bg-casino-muted hover:bg-casino-secondary text-casino-text-dim"
               onClick={() => setBetAmount(100)}
               disabled={isGameRunning}
             >
@@ -92,7 +93,7 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-casino-text-dim">AUTO CASHOUT</span>
             <div className="flex items-center">
@@ -101,13 +102,13 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
                 id="auto-cashout-toggle"
                 checked={autoCashoutEnabled}
                 onChange={() => setAutoCashoutEnabled(!autoCashoutEnabled)}
-                className="mr-2 h-4 w-4 accent-casino-accent"
+                className="mr-2 h-5 w-5 accent-casino-accent"
                 disabled={isGameRunning}
               />
-              <span className="text-sm font-medium">{autoCashout.toFixed(2)}×</span>
+              <span className="text-lg font-medium">{autoCashout.toFixed(2)}×</span>
             </div>
           </div>
-          <div className="px-1">
+          <div className="px-1 py-2">
             <Slider
               disabled={isGameRunning || !autoCashoutEnabled}
               value={[autoCashout]}
@@ -129,7 +130,7 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
           <Button
             onClick={handleCashout}
             disabled={disabled}
-            className="w-full py-6 text-lg font-semibold bg-casino-green hover:bg-casino-accent-light text-white transition-all duration-200 animate-pulse-glow"
+            className="w-full py-8 text-2xl font-semibold bg-casino-green hover:bg-casino-accent-light text-white transition-all duration-200 animate-pulse-glow"
           >
             CASH OUT {currentMultiplier.toFixed(2)}×
           </Button>
@@ -137,7 +138,7 @@ const BettingPanel: React.FC<BettingPanelProps> = ({
           <Button
             onClick={handlePlaceBet}
             disabled={disabled}
-            className="w-full py-6 text-lg font-semibold bg-casino-accent hover:bg-casino-accent-light text-white transition-all duration-200"
+            className="w-full py-8 text-2xl font-semibold bg-casino-accent hover:bg-casino-accent-light text-white transition-all duration-200"
           >
             PLACE BET
           </Button>
