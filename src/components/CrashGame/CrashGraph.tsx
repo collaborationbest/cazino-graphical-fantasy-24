@@ -53,45 +53,48 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       const graphWidth = width - padding.left - padding.right;
       const graphHeight = height - padding.top - padding.bottom;
       
-      const xScale = graphWidth / maxMultiplier;
-      const yScale = graphHeight / maxMultiplier;
+      // Dynamically adjust the scale based on the current multiplier
+      const displayMax = Math.max(maxMultiplier, Math.ceil(multiplier * 1.2));
+      const xScale = graphWidth / displayMax;
+      const yScale = graphHeight / displayMax;
       
-      // Draw background grid
+      // Draw background grid - dynamic grid based on current multiplier
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       
+      // Determine grid step based on multiplier range
+      const gridStep = displayMax <= 10 ? 1 : 
+                        displayMax <= 20 ? 2 : 
+                        displayMax <= 50 ? 5 : 10;
+      
       // Vertical grid lines
-      for (let i = 1; i <= maxMultiplier; i++) {
-        if (i % 1 === 0) {
-          const x = padding.left + i * xScale;
-          ctx.beginPath();
-          ctx.moveTo(x, padding.top);
-          ctx.lineTo(x, height - padding.bottom);
-          ctx.stroke();
-          
-          // Draw x-axis labels
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText(i.toString() + 'x', x, height - padding.bottom + 20);
-        }
+      for (let i = 0; i <= displayMax; i += gridStep) {
+        const x = padding.left + i * xScale;
+        ctx.beginPath();
+        ctx.moveTo(x, padding.top);
+        ctx.lineTo(x, height - padding.bottom);
+        ctx.stroke();
+        
+        // Draw x-axis labels at reasonable intervals
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(i.toString() + 'x', x, height - padding.bottom + 20);
       }
       
       // Horizontal grid lines
-      for (let i = 1; i <= maxMultiplier; i++) {
-        if (i % 1 === 0) {
-          const y = height - padding.bottom - i * yScale;
-          ctx.beginPath();
-          ctx.moveTo(padding.left, y);
-          ctx.lineTo(width - padding.right, y);
-          ctx.stroke();
-          
-          // Draw y-axis labels
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'right';
-          ctx.fillText(i.toString() + 'x', padding.left - 10, y + 5);
-        }
+      for (let i = 0; i <= displayMax; i += gridStep) {
+        const y = height - padding.bottom - i * yScale;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+        
+        // Draw y-axis labels
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(i.toString() + 'x', padding.left - 10, y + 5);
       }
       
       // Draw x and y axis

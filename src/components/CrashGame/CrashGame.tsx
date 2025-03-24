@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import CrashGraph from './CrashGraph';
 import BettingPanel from './BettingPanel';
@@ -20,11 +20,12 @@ interface Bet {
 const generateCrashPoint = (): number => {
   // Generate a random point with bias towards lower values
   const r = Math.random();
-  // House edge factor
+  // House edge factor (99% RTP)
   const houseEdge = 0.99;
-  // Use an exponential distribution
-  let result = 0.9 + (100 * houseEdge * (1 / r));
-  // Cap at 100x for sanity
+  // Use an exponential distribution for realistic casino-like odds
+  let result = 0.9 + (100 * houseEdge * (1 / (1 - (r * 0.96))));
+  
+  // Cap at 100x and round to 2 decimal places for display
   return Math.min(Math.round(result * 100) / 100, 100);
 };
 
@@ -58,8 +59,22 @@ const CrashGame: React.FC = () => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [gameHistory, setGameHistory] = useState<number[]>([]);
   const [balance, setBalance] = useState(1000); // Starting balance
-  const [gameTimer, setGameTimer] = useState<NodeJS.Timeout | null>(null);
-  const [multiplierTimer, setMultiplierTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Use refs for timers to avoid closure issues
+  const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const multiplierTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear timers safely
+  const clearTimers = useCallback(() => {
+    if (gameTimerRef.current) {
+      clearTimeout(gameTimerRef.current);
+      gameTimerRef.current = null;
+    }
+    if (multiplierTimerRef.current) {
+      clearInterval(multiplierTimerRef.current);
+      multiplierTimerRef.current = null;
+    }
+  }, []);
 
   // Initialize the game with some history
   useEffect(() => {
@@ -91,8 +106,7 @@ const CrashGame: React.FC = () => {
     
     // Cleanup timers on component unmount
     return () => {
-      if (gameTimer) clearTimeout(gameTimer);
-      if (multiplierTimer) clearInterval(multiplierTimer);
+      clearTimers();
     };
   }, []);
 
@@ -204,7 +218,7 @@ const CrashGame: React.FC = () => {
         
         // Random chance to cash out based on multiplier
         // Higher multiplier means higher chance to cash out
-        const shouldCashOut = Math.random() < (0.1 * newMultiplier);
+        const shouldCashOut = Math.random() < (0.05 * Math.log2(newMultiplier + 1));
         
         if (shouldCashOut) {
           const profit = bet.amount * (newMultiplier - 1);
@@ -259,6 +273,9 @@ const CrashGame: React.FC = () => {
 
   // Start a new game
   const startNewGame = useCallback(() => {
+    // Clear any existing timers first
+    clearTimers();
+    
     // Reset game state
     setWaitingForNextGame(true);
     setCrashed(false);
@@ -275,7 +292,7 @@ const CrashGame: React.FC = () => {
     setBets(prevBets => [...aiBets, ...prevBets].slice(0, 20)); // Keep only the most recent 20 bets
     
     // Wait for 3 seconds before starting the game
-    const timer = setTimeout(() => {
+    gameTimerRef.current = setTimeout(() => {
       setWaitingForNextGame(false);
       setIsGameRunning(true);
       
@@ -283,12 +300,12 @@ const CrashGame: React.FC = () => {
       let lastUpdateTime = Date.now();
       let currentValue = 1;
       
-      const interval = setInterval(() => {
+      multiplierTimerRef.current = setInterval(() => {
         const now = Date.now();
         const deltaTime = (now - lastUpdateTime) / 1000;
         lastUpdateTime = now;
         
-        // Growth rate increases over time
+        // Growth rate increases over time for dramatic effect
         const growthRate = 0.5 * Math.pow(currentValue, 0.7);
         const newValue = currentValue + (growthRate * deltaTime);
         currentValue = newValue;
@@ -300,33 +317,23 @@ const CrashGame: React.FC = () => {
         
         // Check if we've reached crash point
         if (newValue >= newCrashPoint) {
-          clearInterval(interval);
+          if (multiplierTimerRef.current) {
+            clearInterval(multiplierTimerRef.current);
+            multiplierTimerRef.current = null;
+          }
+          
           setCrashed(true);
           setIsGameRunning(false);
           processCrash(newCrashPoint);
           
           // Start next game after 3 seconds
-          const nextGameTimer = setTimeout(() => {
+          gameTimerRef.current = setTimeout(() => {
             startNewGame();
           }, 3000);
-          
-          setGameTimer(nextGameTimer);
         }
       }, 50); // Update frequently for smooth animation
-      
-      setMultiplierTimer(interval);
     }, 3000);
-    
-    setGameTimer(timer);
-  }, [generateAIBets, processAICashouts, processCrash]);
-
-  // Clean up timers when game state changes
-  useEffect(() => {
-    return () => {
-      if (gameTimer) clearTimeout(gameTimer);
-      if (multiplierTimer) clearInterval(multiplierTimer);
-    };
-  }, [gameTimer, multiplierTimer]);
+  }, [generateAIBets, processAICashouts, processCrash, clearTimers]);
 
   return (
     <div className="min-h-screen w-full bg-casino-primary text-casino-text flex flex-col">
