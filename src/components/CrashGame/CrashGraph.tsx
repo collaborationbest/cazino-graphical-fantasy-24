@@ -134,7 +134,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.lineTo(padding.left, padding.top);
       ctx.stroke();
 
-      // Draw curve using the actual data points
+      // Draw curve using the actual data points with bezier curves for smooth bending
       ctx.beginPath();
       
       // Start at the origin (0,0) in graph coordinates
@@ -145,26 +145,38 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       // Get the relevant data slice based on current multiplier
       const relevantData = wsData.slice(0, dataIndex + 1);
       
-      // If we have data, ensure we draw a line from (0,0) to the first data point
+      // If we have data, ensure we draw a curve from (0,0) to and through all data points
       if (relevantData.length > 0) {
-        // Draw line to first point (if it's not at 0,0)
+        // Draw line to first point from origin
         const firstPoint = relevantData[0];
         const firstX = padding.left + firstPoint.v * xScale;
         const firstY = height - padding.bottom - firstPoint.v * yScale;
         
-        // Only draw this line if the first point isn't at (0,0)
-        if (firstPoint.v > 0) {
-          ctx.lineTo(firstX, firstY);
-        }
+        // Always draw a curve from origin to first point
+        ctx.quadraticCurveTo(
+          startX + (firstX - startX) * 0.5, 
+          startY, 
+          firstX, 
+          firstY
+        );
         
-        // Now continue drawing the rest of the points
-        relevantData.forEach((point, index) => {
-          if (index === 0) return; // Skip the first point as we already handled it
+        // Draw smooth curves between all subsequent points
+        for (let i = 1; i < relevantData.length; i++) {
+          const prevPoint = relevantData[i-1];
+          const currentPoint = relevantData[i];
           
-          const x = padding.left + point.v * xScale;
-          const y = height - padding.bottom - point.v * yScale;
-          ctx.lineTo(x, y);
-        });
+          const prevX = padding.left + prevPoint.v * xScale;
+          const prevY = height - padding.bottom - prevPoint.v * yScale;
+          const currentX = padding.left + currentPoint.v * xScale;
+          const currentY = height - padding.bottom - currentPoint.v * yScale;
+          
+          // Calculate control point for bezier curve
+          // For most natural-looking exponential growth curve, we use quadratic bezier
+          const cpX = prevX + (currentX - prevX) * 0.5;
+          const cpY = prevY; // Control point at same height as previous point creates a nice curve
+          
+          ctx.quadraticCurveTo(cpX, cpY, currentX, currentY);
+        }
       }
 
       // Create gradient for path
