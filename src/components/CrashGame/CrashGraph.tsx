@@ -19,17 +19,22 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   
+  // Store current data point index
   const [dataIndex, setDataIndex] = useState(0);
 
+  // Find the closest data point to the current multiplier
   const getClosestDataIndex = (targetMultiplier: number): number => {
+    // If we're beyond the data, return the last index
     if (targetMultiplier >= wsData[wsData.length - 1].v) {
       return wsData.length - 1;
     }
     
+    // Find the index of the first data point with value >= targetMultiplier
     const index = wsData.findIndex(point => point.v >= targetMultiplier);
     return index >= 0 ? index : 0;
   };
 
+  // Draw the graph on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -37,6 +42,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
+    // Update canvas dimensions to match container
     const updateCanvasSize = () => {
       if (canvas && container) {
         canvas.width = container.clientWidth;
@@ -47,9 +53,11 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
 
+    // Update the data index based on the current multiplier
     const currentIndex = getClosestDataIndex(multiplier);
     setDataIndex(currentIndex);
 
+    // Draw function
     const draw = () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -57,26 +65,30 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       const width = canvas.width;
       const height = canvas.height;
 
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      // Graph settings - adjust padding to give more space for graph
       const padding = { left: 60, right: 40, top: 40, bottom: 60 };
       const graphWidth = width - padding.left - padding.right;
       const graphHeight = height - padding.top - padding.bottom;
 
+      // Use the real data's max value or current multiplier, whichever is higher
       const dataMax = getMaxMultiplier();
       const displayMax = Math.max(maxMultiplier, dataMax, Math.ceil(multiplier * 1.2));
       const xScale = graphWidth / displayMax;
       const yScale = graphHeight / displayMax;
 
-      // Define the starting point for the curve
-      const startX = padding.left;
-      const startY = height - padding.bottom;
-
+      // Draw background grid - dynamic grid based on current multiplier
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
 
+      // Determine grid step based on multiplier range
       const gridStep = displayMax <= 10 ? 1 :
         displayMax <= 20 ? 2 :
           displayMax <= 50 ? 5 : 10;
 
+      // Vertical grid lines - start from 0
       for (let i = 0; i <= displayMax; i += gridStep) {
         const x = padding.left + i * xScale;
         ctx.beginPath();
@@ -84,12 +96,14 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
         ctx.lineTo(x, height - padding.bottom);
         ctx.stroke();
 
+        // Draw x-axis labels at reasonable intervals
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(i.toString() + 'x', x, height - padding.bottom + 20);
       }
 
+      // Horizontal grid lines - start from 0
       for (let i = 0; i <= displayMax; i += gridStep) {
         const y = height - padding.bottom - i * yScale;
         ctx.beginPath();
@@ -97,62 +111,63 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
         ctx.lineTo(width - padding.right, y);
         ctx.stroke();
 
+        // Draw y-axis labels
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.font = '12px Arial';
         ctx.textAlign = 'right';
         ctx.fillText(i.toString() + 'x', padding.left - 10, y + 5);
       }
 
+      // Draw x and y axis
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 2;
 
+      // X-axis - at y=0
       ctx.beginPath();
       ctx.moveTo(padding.left, height - padding.bottom);
       ctx.lineTo(width - padding.right, height - padding.bottom);
       ctx.stroke();
 
+      // Y-axis - at x=0
       ctx.beginPath();
       ctx.moveTo(padding.left, height - padding.bottom);
       ctx.lineTo(padding.left, padding.top);
       ctx.stroke();
 
+      // Draw curve using the actual data points
       ctx.beginPath();
+      
+      // Start at the origin (0,0) in graph coordinates
+      const startX = padding.left;
+      const startY = height - padding.bottom;
       ctx.moveTo(startX, startY);
       
+      // Get the relevant data slice based on current multiplier
       const relevantData = wsData.slice(0, dataIndex + 1);
       
+      // If we have data, ensure we draw a line from (0,0) to the first data point
       if (relevantData.length > 0) {
+        // Draw line to first point (if it's not at 0,0)
         const firstPoint = relevantData[0];
         const firstX = padding.left + firstPoint.v * xScale;
         const firstY = height - padding.bottom - firstPoint.v * yScale;
         
-        const initialControlX = startX + (firstX - startX) * 0.2;
-        const initialControlY = startY - (startY - firstY) * 0.1;
-        
-        ctx.quadraticCurveTo(
-          initialControlX,
-          initialControlY,
-          firstX,
-          firstY
-        );
-        
-        for (let i = 1; i < relevantData.length; i++) {
-          const prevPoint = relevantData[i-1];
-          const currentPoint = relevantData[i];
-          
-          const prevX = padding.left + prevPoint.v * xScale;
-          const prevY = height - padding.bottom - prevPoint.v * yScale;
-          const currentX = padding.left + currentPoint.v * xScale;
-          const currentY = height - padding.bottom - currentPoint.v * yScale;
-          
-          const tension = Math.min(0.3, currentPoint.v / 20);
-          const cpX = prevX + (currentX - prevX) * 0.5;
-          const cpY = prevY - Math.abs(currentY - prevY) * tension;
-          
-          ctx.quadraticCurveTo(cpX, cpY, currentX, currentY);
+        // Only draw this line if the first point isn't at (0,0)
+        if (firstPoint.v > 0) {
+          ctx.lineTo(firstX, firstY);
         }
+        
+        // Now continue drawing the rest of the points
+        relevantData.forEach((point, index) => {
+          if (index === 0) return; // Skip the first point as we already handled it
+          
+          const x = padding.left + point.v * xScale;
+          const y = height - padding.bottom - point.v * yScale;
+          ctx.lineTo(x, y);
+        });
       }
 
+      // Create gradient for path
       const lastPoint = relevantData.length > 0 ? relevantData[relevantData.length - 1] : { v: 0 };
       const lastX = padding.left + lastPoint.v * xScale;
       const lastY = height - padding.bottom - lastPoint.v * yScale;
@@ -177,6 +192,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.lineWidth = 4;
       ctx.stroke();
 
+      // Draw area under curve
       ctx.lineTo(lastX, height - padding.bottom);
       ctx.closePath();
       ctx.fillStyle = gradient;
@@ -184,12 +200,14 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.fill();
       ctx.globalAlpha = 1;
 
+      // Draw current multiplier point and label
       if (relevantData.length > 0) {
         ctx.fillStyle = crashed ? 'rgba(255, 71, 87, 1)' : 'rgba(0, 215, 187, 1)';
         ctx.beginPath();
         ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
         ctx.fill();
 
+        // Add a glow effect to the endpoint
         ctx.shadowColor = crashed ? 'rgba(255, 71, 87, 0.8)' : 'rgba(0, 215, 187, 0.8)';
         ctx.shadowBlur = 15;
         ctx.beginPath();
@@ -197,10 +215,12 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
         ctx.fill();
         ctx.shadowBlur = 0;
 
+        // Draw multiplier text with better positioning
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'left';
         ctx.fillStyle = '#FFFFFF';
         
+        // Make sure text stays within canvas
         const textOffset = width - lastX < 80 ? -80 : 15;
         ctx.fillText(
           lastPoint.v.toFixed(2) + 'x',
@@ -210,6 +230,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       }
     };
 
+    // Animation loop
     const animate = () => {
       draw();
       animationFrameRef.current = requestAnimationFrame(animate);
