@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { wsData, getMaxMultiplier } from '@/utils/crashData';
 
@@ -64,6 +65,10 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       const displayMax = Math.max(maxMultiplier, dataMax, Math.ceil(multiplier * 1.2));
       const xScale = graphWidth / displayMax;
       const yScale = graphHeight / displayMax;
+
+      // Define the starting point for the curve
+      const startX = padding.left;
+      const startY = height - padding.bottom;
 
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
