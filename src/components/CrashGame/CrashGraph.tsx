@@ -134,36 +134,46 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.lineTo(padding.left, padding.top);
       ctx.stroke();
 
-      // Draw curve using the actual data points
-      ctx.beginPath();
-      
-      // Start at the origin (0,0) in graph coordinates
+      // Define the starting point (origin) in graph coordinates
       const startX = padding.left;
       const startY = height - padding.bottom;
+
+      // Draw curve using the actual data points with bezier curves
+      ctx.beginPath();
       ctx.moveTo(startX, startY);
       
       // Get the relevant data slice based on current multiplier
       const relevantData = wsData.slice(0, dataIndex + 1);
       
-      // If we have data, ensure we draw a line from (0,0) to the first data point
       if (relevantData.length > 0) {
-        // Draw line to first point (if it's not at 0,0)
-        const firstPoint = relevantData[0];
-        const firstX = padding.left + firstPoint.v * xScale;
-        const firstY = height - padding.bottom - firstPoint.v * yScale;
+        // Create bezier curve points
+        let prevX = startX;
+        let prevY = startY;
         
-        // Only draw this line if the first point isn't at (0,0)
-        if (firstPoint.v > 0) {
-          ctx.lineTo(firstX, firstY);
-        }
-        
-        // Now continue drawing the rest of the points
         relevantData.forEach((point, index) => {
-          if (index === 0) return; // Skip the first point as we already handled it
-          
-          const x = padding.left + point.v * xScale;
-          const y = height - padding.bottom - point.v * yScale;
-          ctx.lineTo(x, y);
+          if (index === 0 && point.v > 0) {
+            // Draw a straight line to the first point if it's not at origin
+            const x = padding.left + point.v * xScale;
+            const y = height - padding.bottom - point.v * yScale;
+            ctx.lineTo(x, y);
+            prevX = x;
+            prevY = y;
+          } else if (index > 0) {
+            const x = padding.left + point.v * xScale;
+            const y = height - padding.bottom - point.v * yScale;
+            
+            // Calculate control points for bezier curve
+            // Control point calculation gives more curve at higher multipliers
+            const cpX1 = prevX + (x - prevX) * 0.5;
+            const tensionY = Math.min(0.7, 0.2 + (point.v / 30)); // Increase tension as value grows
+            const cpY1 = prevY - (prevY - y) * tensionY;
+            
+            // Draw curved line using quadratic bezier
+            ctx.quadraticCurveTo(cpX1, cpY1, x, y);
+            
+            prevX = x;
+            prevY = y;
+          }
         });
       }
 
