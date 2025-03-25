@@ -1,5 +1,6 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { wsData, getMaxMultiplier } from '@/utils/crashData';
 
 interface CrashGraphProps {
   multiplier: number;
@@ -17,6 +18,21 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  
+  // Store current data point index
+  const [dataIndex, setDataIndex] = useState(0);
+
+  // Find the closest data point to the current multiplier
+  const getClosestDataIndex = (targetMultiplier: number): number => {
+    // If we're beyond the data, return the last index
+    if (targetMultiplier >= wsData[wsData.length - 1].v) {
+      return wsData.length - 1;
+    }
+    
+    // Find the index of the first data point with value >= targetMultiplier
+    const index = wsData.findIndex(point => point.v >= targetMultiplier);
+    return index >= 0 ? index : 0;
+  };
 
   // Draw the graph on canvas
   useEffect(() => {
@@ -37,6 +53,10 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
 
+    // Update the data index based on the current multiplier
+    const currentIndex = getClosestDataIndex(multiplier);
+    setDataIndex(currentIndex);
+
     // Draw function
     const draw = () => {
       const ctx = canvas.getContext('2d');
@@ -53,8 +73,9 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       const graphWidth = width - padding.left - padding.right;
       const graphHeight = height - padding.top - padding.bottom;
 
-      // Dynamically adjust the scale based on the current multiplier
-      const displayMax = Math.max(maxMultiplier, Math.ceil(multiplier * 1.2));
+      // Use the real data's max value or current multiplier, whichever is higher
+      const dataMax = getMaxMultiplier();
+      const displayMax = Math.max(maxMultiplier, dataMax, Math.ceil(multiplier * 1.2));
       const xScale = graphWidth / displayMax;
       const yScale = graphHeight / displayMax;
 
@@ -113,43 +134,31 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.lineTo(padding.left, padding.top);
       ctx.stroke();
 
-      // Function to calculate curve points - starting from 0,0
-      const calculatePoints = (currentMultiplier: number) => {
-        const points = [];
-        const steps = 100;
-        const curveExponent = 1.5; // Controls curve steepness
-
-        for (let i = 0; i <= steps; i++) {
-          const progress = i / steps;
-          const x = progress * currentMultiplier;
-          // Use a power function to create exponential growth
-          const y = Math.pow(progress, curveExponent) * currentMultiplier;
-          points.push({ x, y });
-        }
-
-        return points;
-      };
-
-      // Draw the curve
-      const points = calculatePoints(multiplier);
-
-      // Draw curve - starting exactly from origin (0,0)
+      // Draw curve using the actual data points
       ctx.beginPath();
       ctx.moveTo(padding.left, height - padding.bottom); // Starting at origin (0,0) in graph coordinates
 
-      points.forEach((point, index) => {
-        // Ensure the curve actually reaches all the way to current multiplier
-        const x = padding.left + point.x * xScale;
-        const y = height - padding.bottom - point.y * yScale;
+      // Get the relevant data slice based on current multiplier
+      const relevantData = wsData.slice(0, dataIndex + 1);
+      
+      relevantData.forEach((point, index) => {
+        if (index === 0) return; // Skip the first point as we already moved to it
+        
+        const x = padding.left + point.v * xScale;
+        const y = height - padding.bottom - point.v * yScale;
         ctx.lineTo(x, y);
       });
 
       // Create gradient for path
+      const lastPoint = relevantData[relevantData.length - 1];
+      const lastX = padding.left + lastPoint.v * xScale;
+      const lastY = height - padding.bottom - lastPoint.v * yScale;
+      
       const gradient = ctx.createLinearGradient(
         padding.left,
         height - padding.bottom,
-        padding.left + multiplier * xScale,
-        height - padding.bottom - multiplier * yScale
+        lastX,
+        lastY
       );
 
       if (crashed) {
@@ -166,18 +175,14 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.stroke();
 
       // Draw area under curve
-      ctx.lineTo(padding.left + multiplier * xScale, height - padding.bottom);
+      ctx.lineTo(lastX, height - padding.bottom);
       ctx.closePath();
       ctx.fillStyle = gradient;
       ctx.globalAlpha = 0.1;
       ctx.fill();
       ctx.globalAlpha = 1;
 
-      // Draw current multiplier label
-      const lastPoint = points[points.length - 1];
-      const lastX = padding.left + lastPoint.x * xScale;
-      const lastY = height - padding.bottom - lastPoint.y * yScale;
-
+      // Draw current multiplier point and label
       ctx.fillStyle = crashed ? 'rgba(255, 71, 87, 1)' : 'rgba(0, 215, 187, 1)';
       ctx.beginPath();
       ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
@@ -191,19 +196,17 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Draw multiplier text - make sure it's visible even at high values
+      // Draw multiplier text with better positioning
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#FFFFFF';
-      const textX = lastX + 15;
-      const textY = lastY - 10;
-
+      
       // Make sure text stays within canvas
-      const textOffset = width - textX < 80 ? -80 : 15;
+      const textOffset = width - lastX < 80 ? -80 : 15;
       ctx.fillText(
-        multiplier.toFixed(2) + 'x',
+        lastPoint.v.toFixed(2) + 'x',
         lastX + textOffset,
-        textY
+        lastY - 10
       );
     };
 
@@ -221,7 +224,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       }
       window.removeEventListener('resize', updateCanvasSize);
     };
-  }, [multiplier, maxMultiplier, crashed, gameHistory]);
+  }, [multiplier, maxMultiplier, crashed, gameHistory, dataIndex]);
 
   return (
     <div

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import CrashGraph from './CrashGraph';
@@ -6,6 +5,7 @@ import BettingPanel from './BettingPanel';
 import GameStats from './GameStats';
 import BetsTable from './BetsTable';
 import { toast } from '@/lib/toast';
+import { getCrashPoint } from '@/utils/crashData';
 
 interface Bet {
   id: string;
@@ -18,15 +18,8 @@ interface Bet {
 
 // Function to generate a random crash point (exponential distribution)
 const generateCrashPoint = (): number => {
-  // Generate a random point with bias towards lower values
-  const r = Math.random();
-  // House edge factor (99% RTP)
-  const houseEdge = 0.99;
-  // Use an exponential distribution for realistic casino-like odds
-  let result = 10.09;
-
-  // Cap at 100x and round to 2 decimal places for display
-  return 9.99;
+  // Use our actual data's crash point instead of a random value
+  return getCrashPoint();
 };
 
 // Random player names
@@ -338,7 +331,6 @@ const CrashGame: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-casino-primary text-casino-text flex flex-col">
-
       <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-6">
         {/* Left column with graph and bets table - 8 columns on large screens */}
         <div className="lg:col-span-8 flex flex-col gap-3 md:gap-6">
@@ -349,9 +341,8 @@ const CrashGame: React.FC = () => {
             gameHistory={gameHistory}
           />
         </div>
-
       </div>
-    </div >
+    </div>
   );
 };
 
