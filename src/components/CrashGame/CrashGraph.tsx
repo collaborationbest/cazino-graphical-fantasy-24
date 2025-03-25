@@ -136,21 +136,39 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
 
       // Draw curve using the actual data points
       ctx.beginPath();
-      ctx.moveTo(padding.left, height - padding.bottom); // Starting at origin (0,0) in graph coordinates
-
+      
+      // Start at the origin (0,0) in graph coordinates
+      const startX = padding.left;
+      const startY = height - padding.bottom;
+      ctx.moveTo(startX, startY);
+      
       // Get the relevant data slice based on current multiplier
       const relevantData = wsData.slice(0, dataIndex + 1);
       
-      relevantData.forEach((point, index) => {
-        if (index === 0) return; // Skip the first point as we already moved to it
+      // If we have data, ensure we draw a line from (0,0) to the first data point
+      if (relevantData.length > 0) {
+        // Draw line to first point (if it's not at 0,0)
+        const firstPoint = relevantData[0];
+        const firstX = padding.left + firstPoint.v * xScale;
+        const firstY = height - padding.bottom - firstPoint.v * yScale;
         
-        const x = padding.left + point.v * xScale;
-        const y = height - padding.bottom - point.v * yScale;
-        ctx.lineTo(x, y);
-      });
+        // Only draw this line if the first point isn't at (0,0)
+        if (firstPoint.v > 0) {
+          ctx.lineTo(firstX, firstY);
+        }
+        
+        // Now continue drawing the rest of the points
+        relevantData.forEach((point, index) => {
+          if (index === 0) return; // Skip the first point as we already handled it
+          
+          const x = padding.left + point.v * xScale;
+          const y = height - padding.bottom - point.v * yScale;
+          ctx.lineTo(x, y);
+        });
+      }
 
       // Create gradient for path
-      const lastPoint = relevantData[relevantData.length - 1];
+      const lastPoint = relevantData.length > 0 ? relevantData[relevantData.length - 1] : { v: 0 };
       const lastX = padding.left + lastPoint.v * xScale;
       const lastY = height - padding.bottom - lastPoint.v * yScale;
       
@@ -183,31 +201,33 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
       ctx.globalAlpha = 1;
 
       // Draw current multiplier point and label
-      ctx.fillStyle = crashed ? 'rgba(255, 71, 87, 1)' : 'rgba(0, 215, 187, 1)';
-      ctx.beginPath();
-      ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
-      ctx.fill();
+      if (relevantData.length > 0) {
+        ctx.fillStyle = crashed ? 'rgba(255, 71, 87, 1)' : 'rgba(0, 215, 187, 1)';
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Add a glow effect to the endpoint
-      ctx.shadowColor = crashed ? 'rgba(255, 71, 87, 0.8)' : 'rgba(0, 215, 187, 0.8)';
-      ctx.shadowBlur = 15;
-      ctx.beginPath();
-      ctx.arc(lastX, lastY, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+        // Add a glow effect to the endpoint
+        ctx.shadowColor = crashed ? 'rgba(255, 71, 87, 0.8)' : 'rgba(0, 215, 187, 0.8)';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
 
-      // Draw multiplier text with better positioning
-      ctx.font = 'bold 14px Arial';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#FFFFFF';
-      
-      // Make sure text stays within canvas
-      const textOffset = width - lastX < 80 ? -80 : 15;
-      ctx.fillText(
-        lastPoint.v.toFixed(2) + 'x',
-        lastX + textOffset,
-        lastY - 10
-      );
+        // Draw multiplier text with better positioning
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#FFFFFF';
+        
+        // Make sure text stays within canvas
+        const textOffset = width - lastX < 80 ? -80 : 15;
+        ctx.fillText(
+          lastPoint.v.toFixed(2) + 'x',
+          lastX + textOffset,
+          lastY - 10
+        );
+      }
     };
 
     // Animation loop
