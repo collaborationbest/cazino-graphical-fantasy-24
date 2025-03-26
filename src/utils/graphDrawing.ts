@@ -1,5 +1,5 @@
 
-import { wsData } from './crashData';
+import { wsData } from './crashData/data';
 
 interface DrawGraphParams {
   ctx: CanvasRenderingContext2D;
@@ -209,7 +209,7 @@ const drawCurrentPoint = (
   y: number,
   value: number,
   crashed: boolean,
-  width: number
+  canvasWidth: number
 ): void => {
   ctx.fillStyle = crashed ? 'rgba(255, 71, 87, 1)' : 'rgba(0, 215, 187, 1)';
   ctx.beginPath();
@@ -230,7 +230,7 @@ const drawCurrentPoint = (
   ctx.fillStyle = '#FFFFFF';
   
   // Make sure text stays within canvas
-  const textOffset = width - x < 80 ? -80 : 15;
+  const textOffset = canvasWidth - x < 80 ? -80 : 15;
   ctx.fillText(
     value.toFixed(2) + 'x',
     x + textOffset,
