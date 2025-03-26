@@ -150,9 +150,6 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
         let prevX = startX;
         let prevY = startY;
         
-        // Check if multiplier has passed 5x threshold
-        const useCurve = multiplier >= 5.0;
-        
         relevantData.forEach((point, index) => {
           if (index === 0 && point.v > 0) {
             // Draw a straight line to the first point if it's not at origin
@@ -165,19 +162,15 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
             const x = padding.left + point.v * xScale;
             const y = height - padding.bottom - point.v * yScale;
             
-            if (!useCurve) {
-              // Use straight lines when multiplier is below 5x
-              ctx.lineTo(x, y);
-            } else {
-              // Use bezier curves when multiplier is 5x or above
-              // Calculate control points for bezier curve
-              const cpX1 = prevX + (x - prevX) * 0.5;
-              const tensionY = Math.min(0.7, 0.2 + (point.v / 30)); // Increase tension as value grows
-              const cpY1 = prevY - (prevY - y) * tensionY;
-              
-              // Draw curved line using quadratic bezier
-              ctx.quadraticCurveTo(cpX1, cpY1, x, y);
-            }
+            // Always use bezier curves for a smoother line
+            // Calculate control points for bezier curve
+            const cpX1 = prevX + (x - prevX) * 0.5;
+            // Adjust tension based on the multiplier value
+            const tensionY = Math.min(0.7, 0.2 + (point.v / 30));
+            const cpY1 = prevY - (prevY - y) * tensionY;
+            
+            // Draw curved line using quadratic bezier
+            ctx.quadraticCurveTo(cpX1, cpY1, x, y);
             
             prevX = x;
             prevY = y;
