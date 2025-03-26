@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { wsData, getMaxMultiplier } from '@/utils/crashData';
 
@@ -162,14 +161,21 @@ const CrashGraph: React.FC<CrashGraphProps> = ({
             const x = padding.left + point.v * xScale;
             const y = height - padding.bottom - point.v * yScale;
             
-            // Calculate control points for bezier curve
-            // Control point calculation gives more curve at higher multipliers
-            const cpX1 = prevX + (x - prevX) * 0.5;
-            const tensionY = Math.min(0.7, 0.2 + (point.v / 30)); // Increase tension as value grows
-            const cpY1 = prevY - (prevY - y) * tensionY;
-            
-            // Draw curved line using quadratic bezier
-            ctx.quadraticCurveTo(cpX1, cpY1, x, y);
+            // Decide between straight lines (below 5x) and bezier curves (above 5x)
+            if (point.v <= 5.0) {
+              // Use straight lines for multipliers below 5x
+              ctx.lineTo(x, y);
+            } else {
+              // Use bezier curves for multipliers above 5x
+              // Calculate control points for bezier curve
+              // Control point calculation gives more curve at higher multipliers
+              const cpX1 = prevX + (x - prevX) * 0.5;
+              const tensionY = Math.min(0.7, 0.2 + ((point.v - 5.0) / 30)); // Increase tension as value grows
+              const cpY1 = prevY - (prevY - y) * tensionY;
+              
+              // Draw curved line using quadratic bezier
+              ctx.quadraticCurveTo(cpX1, cpY1, x, y);
+            }
             
             prevX = x;
             prevY = y;
